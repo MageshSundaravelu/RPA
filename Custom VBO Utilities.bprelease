@@ -1,0 +1,246 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<bpr:release xmlns:bpr="http://www.blueprism.co.uk/product/release">
+    <bpr:name>Custom VBO Utilities</bpr:name>
+    <bpr:release-notes />
+    <bpr:created>2019-07-02 05:38:27Z</bpr:created>
+    <bpr:package-id>-1</bpr:package-id>
+    <bpr:package-name>&lt;Adhoc Package&gt;</bpr:package-name>
+    <bpr:user-created-by>admin</bpr:user-created-by>
+    <bpr:contents count="3">
+        <object id="9f35419b-d106-47ba-aeaf-6f827334f701" name="Custom Utility - General" xmlns="http://www.blueprism.co.uk/product/process"><process name="Custom Utility - General" version="1.0" bpversion="5.0.10.0" narrative="" type="object" runmode="Exclusive"><appdef><element name="Application Root"><id>17416193-a614-4ce4-b9c1-510a446f68ad</id><type>Application</type><basetype>Application</basetype><datatype>unknown</datatype><diagnose>False</diagnose></element></appdef><view><camerax>0</camerax><cameray>0</cameray><zoom version="2">1.25</zoom></view><preconditions /><endpoint narrative="" /><subsheet subsheetid="e59749fb-ac62-4a2b-b168-9c93043e3acd" type="CleanUp" published="True"><name>Clean Up</name><view><camerax>0</camerax><cameray>0</cameray><zoom version="2">1.25</zoom></view></subsheet><subsheet subsheetid="cec5ad3b-9ba5-4fe5-a4c0-cdb73c784a99" type="Normal" published="True"><name>Collection To Html Table</name><view><camerax>0</camerax><cameray>0</cameray><zoom version="2">1.25</zoom></view></subsheet><subsheet subsheetid="92fec94a-daf8-4b9f-945b-9e4531edad2c" type="Normal" published="True"><name>Send Email</name><view><camerax>21</camerax><cameray>-65</cameray><zoom version="2">1.25</zoom></view></subsheet><subsheet subsheetid="953a8895-e47d-4eb5-b9c3-e780b5b8fe1c" type="Normal" published="True"><name>Replace SpecialCharacter</name><view><camerax>0</camerax><cameray>8</cameray><zoom version="2">1.25</zoom></view></subsheet><stage stageid="a8b81c85-0673-431e-86ae-09d7e95d2740" name="Start" type="Start"><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>-105</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><onsuccess>6a8f3853-571a-4f80-9c50-ec04aa921733</onsuccess></stage><stage stageid="6a8f3853-571a-4f80-9c50-ec04aa921733" name="End" type="End"><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>90</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="44e8c14f-04b9-49e2-9458-e2916329b587" name="Stage1" type="ProcessInfo"><narrative></narrative><displayx>-195</displayx><displayy>-105</displayy><displaywidth>150</displaywidth><displayheight>90</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><references><reference>System.Data.dll</reference><reference>System.Xml.dll</reference><reference>System.Drawing.dll</reference><reference>System.dll</reference><reference>C:\Windows\assembly\GAC_MSIL\Microsoft.Office.Interop.Outlook\15.0.0.0__71e9bce111e9429c\Microsoft.Office.Interop.Outlook.dll</reference></references><imports><import>System</import><import>System.Drawing</import><import>System.Data</import><import>System.Text</import><import>Microsoft.Office.Interop.Outlook</import><import>System.Text.RegularExpressions</import></imports><language>csharp</language><globalcode><![CDATA[]]></globalcode><code><![CDATA[    public  string ConvertDataTableToString(DataTable dt)
+        {
+            StringBuilder myBuilder = new StringBuilder();
+
+            //  myBuilder.Append("style='border: solid 1px Silver; font-size: x-small;'>");
+            myBuilder.Append("<html>");
+            myBuilder.Append("<body>");
+            myBuilder.Append("<table border='1' cellpadding='5' cellspacing='5'>");
+
+            myBuilder.Append("<tr align='left' valign='top'>");
+            foreach (DataColumn myColumn in dt.Columns)
+            {
+                myBuilder.Append("<td align='left' valign='top'><b>");
+                myBuilder.Append(myColumn.ColumnName);
+                myBuilder.Append("</b></td>");
+            }
+            myBuilder.Append("</tr>");
+
+            foreach (DataRow myRow in dt.Rows)
+            {
+                myBuilder.Append("<tr align='left' valign='top'>");
+                foreach (DataColumn myColumn in dt.Columns)
+                {
+                    myBuilder.Append("<td align='left' valign='top'>");
+                    myBuilder.Append(myRow[myColumn.ColumnName].ToString());
+                    myBuilder.Append("</td>");
+                }
+                myBuilder.Append("</tr>");
+            }
+            myBuilder.Append("</table>");
+            myBuilder.Append("</body>");
+            myBuilder.Append("</html>");
+
+            myBuilder.Append("<br>");
+
+            return myBuilder.ToString();
+        }
+
+
+
+  public  string SendEmailWithHTMLBody(string _FromEmail,string _ToEmail, string _Subject, string _EmailBody,string _MailSenderSeparator)
+        {
+			bool AccountFound=false;
+            string FromMail = _FromEmail;
+            Microsoft.Office.Interop.Outlook.Application oApp = new Microsoft.Office.Interop.Outlook.Application();
+            Microsoft.Office.Interop.Outlook.Accounts acc = oApp.Session.Accounts;
+            foreach (Microsoft.Office.Interop.Outlook.Account account in acc)
+            {
+                if (FromMail == account.DisplayName)
+                {
+					AccountFound=true;
+                    Microsoft.Office.Interop.Outlook.MailItem email = (Microsoft.Office.Interop.Outlook.MailItem)(oApp.CreateItem(Microsoft.Office.Interop.Outlook.OlItemType.olMailItem));
+                    if (_ToEmail.IndexOf(_MailSenderSeparator) > 0)
+                    {
+                        string[] separators = {_MailSenderSeparator};
+                        string[] strRecipients = _ToEmail.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (string s in strRecipients)
+                        {
+                            email.Recipients.Add(s);
+                        }
+                    }
+                    else
+                        email.Recipients.Add(_ToEmail);
+                    email.Subject = _Subject;
+                    email.SendUsingAccount = account;
+                    email.HTMLBody = _EmailBody;
+                    email.Save();
+                    ((Microsoft.Office.Interop.Outlook._MailItem)email).Send();	
+                }
+            }
+			if(!AccountFound)
+			{
+				return "The Email: " + FromMail + " is not configured in Outlook";
+			}
+			return "Mail Sent Successfully";
+        }
+]]></code></stage><stage stageid="0c772879-9605-4483-a7fd-6e59b44c066a" name="Clean Up" type="SubSheetInfo"><subsheetid>e59749fb-ac62-4a2b-b168-9c93043e3acd</subsheetid><narrative></narrative><displayx>-195</displayx><displayy>-105</displayy><displaywidth>150</displaywidth><displayheight>90</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="08ec3545-a3a8-4659-8b57-e3c2e361b79d" name="Start" type="Start"><subsheetid>e59749fb-ac62-4a2b-b168-9c93043e3acd</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>-105</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><onsuccess>42dcc707-cc4e-4788-a104-808dfd487130</onsuccess></stage><stage stageid="42dcc707-cc4e-4788-a104-808dfd487130" name="End" type="End"><subsheetid>e59749fb-ac62-4a2b-b168-9c93043e3acd</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>90</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="22313fa3-8bd7-4f28-b06a-862de4935e3c" name="Collection To Html Table" type="SubSheetInfo"><subsheetid>cec5ad3b-9ba5-4fe5-a4c0-cdb73c784a99</subsheetid><narrative></narrative><displayx>-195</displayx><displayy>-105</displayy><displaywidth>150</displaywidth><displayheight>90</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="a1202fc3-4748-4da4-b682-390c5fe1f3b2" name="Start" type="Start"><subsheetid>cec5ad3b-9ba5-4fe5-a4c0-cdb73c784a99</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>-105</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><onsuccess>dad0998e-911d-4cda-8494-06df8f659648</onsuccess></stage><stage stageid="7e7e35cf-aaf3-444e-aa66-c40ae18bc409" name="End" type="End"><subsheetid>cec5ad3b-9ba5-4fe5-a4c0-cdb73c784a99</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>90</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="d6bd590c-0f8a-4364-b903-adcb08859be0" name="Note1" type="Note"><subsheetid>e59749fb-ac62-4a2b-b168-9c93043e3acd</subsheetid><narrative>Clean Up Page
+
+This is an optional page where you might choose to perform some finalisation (or "cleanup") tasks as your business object is closed down.
+
+The cleanup action will be called automatically immediately after closing your business object at the end of a business process.
+
+You will not be able to call this action from a business process, nor will it be called at any other time than before the disposal of the business object.</narrative><displayx>-180</displayx><displayy>60</displayy><displaywidth>180</displaywidth><displayheight>230</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="2380b30b-bdea-4c87-b496-524ef34e5208" name="Note2" type="Note"><narrative>Initialise Page
+
+This is an optional page where you might choose to perform some initialisation tasks after your business object is loaded.
+
+The initialise action will be called automatically immediately after loading your business object.
+
+You will not be able to call this action from a business process, nor will it be called at any other time than after the creation of the object.</narrative><displayx>-180</displayx><displayy>60</displayy><displaywidth>180</displaywidth><displayheight>230</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="f10f0b26-97dc-4a9b-a03c-510c6edd80f0" name="Input" type="Collection"><subsheetid>cec5ad3b-9ba5-4fe5-a4c0-cdb73c784a99</subsheetid><loginhibit /><narrative></narrative><displayx>-210</displayx><displayy>15</displayy><displaywidth>90</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><datatype>collection</datatype><private /><alwaysinit /><collectioninfo><field name="Name" type="text" /><field name="Email" type="text" /><field name="Address" type="text" /><field name="Age" type="number" /></collectioninfo><initialvalue><row><field name="Name" type="text" value="Magesh" /><field name="Email" type="text" value="magesh678@yyyy.com" /><field name="Address" type="text" value="12th cross street Chennai" /><field name="Age" type="number" value="25" /></row><row><field name="Name" type="text" value="Athul" /><field name="Email" type="text" value="Atz513@hotmail.com" /><field name="Address" type="text" value="4th street New York" /><field name="Age" type="number" value="24" /></row><row><field name="Name" type="text" value="Vicky" /><field name="Email" type="text" value="VickyRocks@yyyy.com" /><field name="Address" type="text" value="Beach Road Miami" /><field name="Age" type="number" value="28" /></row><row><field name="Name" type="text" value="Jain" /><field name="Email" type="text" value="JJ413@yahoo.com" /><field name="Address" type="text" value="10th Street Mylapore" /><field name="Age" type="number" value="22" /></row></initialvalue></stage><stage stageid="dad0998e-911d-4cda-8494-06df8f659648" name="Convert Collection To Html String" type="Code"><subsheetid>cec5ad3b-9ba5-4fe5-a4c0-cdb73c784a99</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>-15</displayy><displaywidth>180</displaywidth><displayheight>60</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><inputs><input type="collection" name="Input" expr="[Input]" /></inputs><outputs><output type="text" name="EmailContent" stage="EmailContent" /></outputs><onsuccess>7e7e35cf-aaf3-444e-aa66-c40ae18bc409</onsuccess><code><![CDATA[EmailContent=ConvertDataTableToString(Input);]]></code></stage><stage stageid="65b67207-3424-4439-94b9-fe2fbeb64cc6" name="EmailContent" type="Data"><subsheetid>cec5ad3b-9ba5-4fe5-a4c0-cdb73c784a99</subsheetid><narrative></narrative><displayx>-210</displayx><displayy>105</displayy><displaywidth>90</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><datatype>text</datatype><initialvalue /><private /><alwaysinit /></stage><stage stageid="34f80912-5d16-47fa-b462-45c985dd920c" name="Send Email" type="SubSheetInfo"><subsheetid>92fec94a-daf8-4b9f-945b-9e4531edad2c</subsheetid><narrative></narrative><displayx>-255</displayx><displayy>-180</displayy><displaywidth>210</displaywidth><displayheight>90</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="02bc3dd4-cff8-47e0-bde7-d8d97e24c234" name="Start" type="Start"><subsheetid>92fec94a-daf8-4b9f-945b-9e4531edad2c</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>-135</displayy><displaywidth>90</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><onsuccess>fdb3e608-d8e8-4822-9e65-7848915171ad</onsuccess></stage><stage stageid="700d697c-9173-42f3-845f-69d94a173342" name="End" type="End"><subsheetid>92fec94a-daf8-4b9f-945b-9e4531edad2c</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>90</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="fdb3e608-d8e8-4822-9e65-7848915171ad" name="Send Email" type="Code"><subsheetid>92fec94a-daf8-4b9f-945b-9e4531edad2c</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>-15</displayy><displaywidth>150</displaywidth><displayheight>60</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><inputs><input type="text" name="FromEmail" expr="[FromEmail]" /><input type="text" name="ToEmail" expr="[ToEmail]" /><input type="text" name="Subject" expr="[Subject]" /><input type="text" name="EmailBody" expr="[EmailBody]" /><input type="text" name="EmailSenderSeparator" expr="[EmailSenderSeparator]" /></inputs><outputs><output type="text" name="OutputMessage" stage="OutputMessage" /></outputs><onsuccess>700d697c-9173-42f3-845f-69d94a173342</onsuccess><code><![CDATA[OutputMessage=SendEmailWithHTMLBody(FromEmail,ToEmail,Subject,EmailBody,EmailSenderSeparator);]]></code></stage><stage stageid="5ffdbcd3-8562-42b6-8811-d2d73a62d231" name="FromEmail" type="Data"><subsheetid>92fec94a-daf8-4b9f-945b-9e4531edad2c</subsheetid><loginhibit /><narrative></narrative><displayx>-270</displayx><displayy>-90</displayy><displaywidth>90</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><datatype>text</datatype><initialvalue xml:space="preserve">v-masu@microsoft.com</initialvalue><private /><alwaysinit /></stage><stage stageid="64455905-f650-445a-a70b-9221e505c902" name="ToEmail" type="Data"><subsheetid>92fec94a-daf8-4b9f-945b-9e4531edad2c</subsheetid><loginhibit /><narrative></narrative><displayx>-270</displayx><displayy>-60</displayy><displaywidth>90</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><datatype>text</datatype><initialvalue xml:space="preserve">v-masu@microsoft.com</initialvalue><private /><alwaysinit /></stage><stage stageid="aacfba3b-bdec-4531-b620-a54a1a2746b7" name="Subject" type="Data"><subsheetid>92fec94a-daf8-4b9f-945b-9e4531edad2c</subsheetid><loginhibit /><narrative></narrative><displayx>-270</displayx><displayy>-30</displayy><displaywidth>90</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><datatype>text</datatype><initialvalue xml:space="preserve">Test</initialvalue><private /><alwaysinit /></stage><stage stageid="d60876bc-1d81-4325-aff2-dd3d279b9a82" name="EmailBody" type="Data"><subsheetid>92fec94a-daf8-4b9f-945b-9e4531edad2c</subsheetid><loginhibit /><narrative></narrative><displayx>-270</displayx><displayy>0</displayy><displaywidth>90</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><datatype>text</datatype><initialvalue xml:space="preserve">&lt;html&gt;&lt;body&gt;&lt;table border='1' cellpadding='5' cellspacing='5'&gt;&lt;tr align='left' valign='top'&gt;&lt;td align='left' valign='top'&gt;&lt;b&gt;Name&lt;/b&gt;&lt;/td&gt;&lt;td align='left' valign='top'&gt;&lt;b&gt;Email&lt;/b&gt;&lt;/td&gt;&lt;td align='left' valign='top'&gt;&lt;b&gt;Address&lt;/b&gt;&lt;/td&gt;&lt;td align='left' valign='top'&gt;&lt;b&gt;Age&lt;/b&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr align='left' valign='top'&gt;&lt;td align='left' valign='top'&gt;Magesh&lt;/td&gt;&lt;td align='left' valign='top'&gt;magesh678@yyyy.com&lt;/td&gt;&lt;td align='left' valign='top'&gt;12th cross street Chennai&lt;/td&gt;&lt;td align='left' valign='top'&gt;25&lt;/td&gt;&lt;/tr&gt;&lt;tr align='left' valign='top'&gt;&lt;td align='left' valign='top'&gt;Athul&lt;/td&gt;&lt;td align='left' valign='top'&gt;Atz513@hotmail.com&lt;/td&gt;&lt;td align='left' valign='top'&gt;4th street New York&lt;/td&gt;&lt;td align='left' valign='top'&gt;24&lt;/td&gt;&lt;/tr&gt;&lt;tr align='left' valign='top'&gt;&lt;td align='left' valign='top'&gt;Vicky&lt;/td&gt;&lt;td align='left' valign='top'&gt;VickyRocks@yyyy.com&lt;/td&gt;&lt;td align='left' valign='top'&gt;Beach Road Miami&lt;/td&gt;&lt;td align='left' valign='top'&gt;28&lt;/td&gt;&lt;/tr&gt;&lt;tr align='left' valign='top'&gt;&lt;td align='left' valign='top'&gt;Jain&lt;/td&gt;&lt;td align='left' valign='top'&gt;JJ413@yahoo.com&lt;/td&gt;&lt;td align='left' valign='top'&gt;10th Street Mylapore&lt;/td&gt;&lt;td align='left' valign='top'&gt;22&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/body&gt;&lt;/html&gt;&lt;br&gt;</initialvalue><private /><alwaysinit /></stage><stage stageid="f430cab4-dcba-4af9-bc57-86a93939afc3" name="EmailSenderSeparator" type="Data"><subsheetid>92fec94a-daf8-4b9f-945b-9e4531edad2c</subsheetid><loginhibit /><narrative></narrative><displayx>-270</displayx><displayy>30</displayy><displaywidth>90</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><datatype>text</datatype><initialvalue xml:space="preserve">;</initialvalue><private /><alwaysinit /></stage><stage stageid="3a43bcf2-4dbf-446a-81c3-84447494628a" name="Replace SpecialCharacter" type="SubSheetInfo"><subsheetid>953a8895-e47d-4eb5-b9c3-e780b5b8fe1c</subsheetid><narrative></narrative><displayx>-345</displayx><displayy>-135</displayy><displaywidth>150</displaywidth><displayheight>90</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="cf361957-d649-4651-b99b-252cd6fcf23b" name="Start" type="Start"><subsheetid>953a8895-e47d-4eb5-b9c3-e780b5b8fe1c</subsheetid><loginhibit /><narrative></narrative><displayx>60</displayx><displayy>-75</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><inputs><input type="text" name="TxtWithSplCharacter" stage="TxtWithSplCharacter" /></inputs><onsuccess>46f9679d-b105-4c12-8125-3f7728d06e0c</onsuccess></stage><stage stageid="46897b84-d523-4af1-b7ca-51d150d3124a" name="End" type="End"><subsheetid>953a8895-e47d-4eb5-b9c3-e780b5b8fe1c</subsheetid><loginhibit /><narrative></narrative><displayx>60</displayx><displayy>90</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><outputs><output type="text" name="FinalText" stage="FinalText" /></outputs></stage><stage stageid="46f9679d-b105-4c12-8125-3f7728d06e0c" name="ReplaceSplCharacter" type="Code"><subsheetid>953a8895-e47d-4eb5-b9c3-e780b5b8fe1c</subsheetid><loginhibit /><narrative></narrative><displayx>60</displayx><displayy>0</displayy><displaywidth>150</displaywidth><displayheight>60</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><inputs><input type="text" name="TxtWithSplCharacter" expr="[TxtWithSplCharacter]" /></inputs><outputs><output type="text" name="FinalText" stage="FinalText" /></outputs><onsuccess>46897b84-d523-4af1-b7ca-51d150d3124a</onsuccess><code><![CDATA[FinalText= Regex.Replace(TxtWithSplCharacter, "[+$^%~()]", "{$0}");
+]]></code></stage><stage stageid="def5d894-808a-4fe9-8036-659a245f6d65" name="TxtWithSplCharacter" type="Data"><subsheetid>953a8895-e47d-4eb5-b9c3-e780b5b8fe1c</subsheetid><narrative></narrative><displayx>-180</displayx><displayy>-30</displayy><displaywidth>150</displaywidth><displayheight>60</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><datatype>text</datatype><initialvalue xml:space="preserve">($) Ravi-(Vicky &amp; Martin) % has # ! % + joined * new project</initialvalue><private /><alwaysinit /></stage><stage stageid="914c063a-382c-446d-a842-4cd4b4b23ea1" name="FinalText" type="Data"><subsheetid>953a8895-e47d-4eb5-b9c3-e780b5b8fe1c</subsheetid><narrative></narrative><displayx>-165</displayx><displayy>60</displayy><displaywidth>150</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><datatype>text</datatype><initialvalue /><private /><alwaysinit /></stage><stage stageid="a028b8e1-1110-4190-9208-f064a014276b" name="OutputMessage" type="Data"><subsheetid>92fec94a-daf8-4b9f-945b-9e4531edad2c</subsheetid><narrative></narrative><displayx>-255</displayx><displayy>105</displayy><displaywidth>90</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><datatype>text</datatype><initialvalue /><private /><alwaysinit /></stage><stage stageid="1e7e0f89-1b23-4cab-8921-d04ed1c0a522" name="Input Variables" type="Block"><subsheetid>cec5ad3b-9ba5-4fe5-a4c0-cdb73c784a99</subsheetid><loginhibit /><narrative></narrative><displayx>-300</displayx><displayy>-30</displayy><displaywidth>180</displaywidth><displayheight>75</displayheight><font family="Segoe UI" size="10" style="Regular" color="FF9900" /></stage><stage stageid="a94d9506-1b87-43a6-b188-0071d8a970e4" name="Output Variables" type="Block"><subsheetid>cec5ad3b-9ba5-4fe5-a4c0-cdb73c784a99</subsheetid><loginhibit /><narrative></narrative><displayx>-300</displayx><displayy>75</displayy><displaywidth>180</displaywidth><displayheight>60</displayheight><font family="Segoe UI" size="10" style="Regular" color="00FF00" /></stage><stage stageid="e6061a53-3da4-46e3-9e6e-1ff5b35cfc2a" name="Input Variables" type="Block"><subsheetid>92fec94a-daf8-4b9f-945b-9e4531edad2c</subsheetid><loginhibit /><narrative></narrative><displayx>-360</displayx><displayy>-120</displayy><displaywidth>195</displaywidth><displayheight>180</displayheight><font family="Segoe UI" size="10" style="Regular" color="FF9900" /></stage><stage stageid="036e4e43-c0fb-4b4f-ad13-2367e5e3d9cd" name="Output Variables" type="Block"><subsheetid>92fec94a-daf8-4b9f-945b-9e4531edad2c</subsheetid><loginhibit /><narrative></narrative><displayx>-360</displayx><displayy>75</displayy><displaywidth>195</displaywidth><displayheight>60</displayheight><font family="Segoe UI" size="10" style="Regular" color="00FF00" /></stage><stage stageid="a416ced8-a245-417b-80f5-246ded2061ff" name="Input Variables" type="Block"><subsheetid>953a8895-e47d-4eb5-b9c3-e780b5b8fe1c</subsheetid><loginhibit /><narrative></narrative><displayx>-300</displayx><displayy>-75</displayy><displaywidth>240</displaywidth><displayheight>90</displayheight><font family="Segoe UI" size="10" style="Regular" color="FF9900" /></stage><stage stageid="ff386e67-1127-4103-bcc3-a6b4c64aaa15" name="Output Variables" type="Block"><subsheetid>953a8895-e47d-4eb5-b9c3-e780b5b8fe1c</subsheetid><loginhibit /><narrative></narrative><displayx>-300</displayx><displayy>30</displayy><displaywidth>240</displaywidth><displayheight>60</displayheight><font family="Segoe UI" size="10" style="Regular" color="00FF00" /></stage></process></object>
+        <object id="3772c20e-943f-426c-bb24-e3516d95bf2a" name="Handle Application WindowStates" xmlns="http://www.blueprism.co.uk/product/process"><process name="Handle Application WindowStates" version="1.0" bpversion="5.0.10.0" narrative="" type="object" runmode="Exclusive"><appdef><element name="Application Root"><id>1981b507-e2a1-4820-80b1-11da3b6056eb</id><type>Application</type><basetype>Application</basetype><datatype>unknown</datatype><diagnose>False</diagnose></element></appdef><view><camerax>0</camerax><cameray>0</cameray><zoom version="2">1.25</zoom></view><preconditions /><endpoint narrative="" /><subsheet subsheetid="4c4173cc-23f2-42e4-8458-cc5ce3507420" type="CleanUp" published="True"><name>Clean Up</name><view><camerax>0</camerax><cameray>0</cameray><zoom version="2">1.25</zoom></view></subsheet><subsheet subsheetid="d00dfc4d-cb0e-4d61-af6e-5e13ff3d7ea0" type="Normal" published="True"><name>Minimise Blueprism</name><view><camerax>0</camerax><cameray>-77</cameray><zoom version="2">1.25</zoom></view></subsheet><subsheet subsheetid="060b1b8d-083e-4f5b-851b-e850e62c37a5" type="Normal" published="True"><name>Maximise Window</name><view><camerax>0</camerax><cameray>-32</cameray><zoom version="2">1.25</zoom></view></subsheet><subsheet subsheetid="c3709fc0-0a96-4707-b88a-7bc75de589b3" type="Normal" published="True"><name>Activate Window</name><view><camerax>0</camerax><cameray>-10</cameray><zoom version="2">1.25</zoom></view></subsheet><subsheet subsheetid="c01b09f7-3439-4cd2-bf1a-c65b3234abd5" type="Normal" published="True"><name>Minimise Window</name><view><camerax>0</camerax><cameray>-32</cameray><zoom version="2">1.25</zoom></view></subsheet><subsheet subsheetid="77a48916-82e2-4124-98af-22f28b24c100" type="Normal" published="True"><name>KillExcelUsingReportName</name><view><camerax>0</camerax><cameray>50</cameray><zoom version="2">1.25</zoom></view></subsheet><stage stageid="aa20acc7-5b9f-4657-a911-1a98de53b6ff" name="Start" type="Start"><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>-105</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><onsuccess>b290dd8c-1e9a-4f3a-b539-f28f2b320657</onsuccess></stage><stage stageid="b290dd8c-1e9a-4f3a-b539-f28f2b320657" name="End" type="End"><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>90</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="7514bc9a-a19b-4be8-bb32-ca6990805721" name="Stage1" type="ProcessInfo"><narrative></narrative><displayx>-195</displayx><displayy>-105</displayy><displaywidth>150</displaywidth><displayheight>90</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><references><reference>System.Data.dll</reference><reference>System.Xml.dll</reference><reference>System.Drawing.dll</reference><reference>System.dll</reference><reference>System.Windows.Forms.dll</reference></references><imports><import>System</import><import>System.Drawing</import><import>System.Runtime.InteropServices</import><import>System.Diagnostics</import><import>System.Windows.Forms</import></imports><language>csharp</language><globalcode><![CDATA[]]></globalcode><code><![CDATA[  private const int SW_MAXIMIZE = 3;
+  private const int SW_MINIMIZE = 6;
+       [DllImport("user32.dll", EntryPoint = "FindWindow")]
+        public static extern IntPtr FindWindowByCaption(IntPtr ZeroOnly, string lpWindowName);
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+		[DllImport("user32.dll")]
+        static extern bool SetForegroundWindow(IntPtr hWnd);
+
+  public static void ChangeWindowState(string WindowTitle,bool Maximise)
+   {
+            Process p = GetProcessByWindowTitle(WindowTitle);			
+			if(p!=null)
+			{
+			IntPtr hwnd = Process.GetProcessById(p.Id).MainWindowHandle;
+			
+            if(Maximise)
+			{
+                ShowWindow(hwnd, SW_MAXIMIZE);
+			}
+			else
+			{
+				ShowWindow(hwnd, SW_MINIMIZE);
+			}
+			}
+     }
+	
+  public static void ActivateWindow(string WindowTitle)
+  {
+	  Process p = GetProcessByWindowTitle(WindowTitle);			
+			if(p!=null)
+			{
+               IntPtr hwnd = Process.GetProcessById(p.Id).MainWindowHandle;
+			   SetForegroundWindow(hwnd);
+			}
+  }
+  public static Process GetProcessByWindowTitle(string WindowTitle)
+     {			
+            Process xlProcess = null;
+            try
+            {				
+               Process[] procList = Process.GetProcesses();
+                if (procList != null)
+                {
+                    foreach (Process ps in procList)
+                    {     
+					if(ps.MainWindowTitle == WindowTitle)
+                        {								
+                            xlProcess = ps;
+                            break;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+              throw ex;
+            }
+            return xlProcess;
+     }
+	
+	 //****************************************Kill Excel Using ReportName***********************************************
+	 
+	 public static void KillExcelUsingName(string rName)
+        {
+            string ExcelReportName = ReturnFilenameWithoutExtension(rName);
+            string windowTitle = string.Concat(ExcelReportName," - Excel");
+            Process excelProcess = GetExcelProcess(windowTitle);
+            if (excelProcess != null)
+            {               
+                KillExcelProcessforKillReports(excelProcess);               
+            }
+        }
+		 public static void KillExcelProcessforKillReports(Process xlProcess)
+        {
+            try
+            {              
+                if (xlProcess != null)
+                {
+                    xlProcess.Kill();
+                    xlProcess.Close();
+                    xlProcess = null;
+                }              
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+ public static string ReturnFilenameWithoutExtension(string reportName)
+        {          
+            if (reportName.IndexOf('.') > 0)
+            {
+                //reportName = reportName.Split('.')[0];
+                var lastIndex = reportName.LastIndexOf(".");
+                reportName = reportName.Substring(0, lastIndex);
+            }
+            return reportName;
+        }
+      public  static Process GetExcelProcess(string windowTitle)
+        {
+            Process xlProcess = null;
+            try
+            {
+                Process[] procList = Process.GetProcessesByName("EXCEL");
+                if (procList != null)
+                {
+                    foreach (Process ps in procList)
+                    {
+				
+                        if (ps.MainWindowTitle == windowTitle)
+                        {	
+							xlProcess = ps;
+                            break;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            return xlProcess;
+        }
+]]></code></stage><stage stageid="16bcf0bb-9bd1-4021-9922-d3b7d58aabf6" name="Clean Up" type="SubSheetInfo"><subsheetid>4c4173cc-23f2-42e4-8458-cc5ce3507420</subsheetid><narrative></narrative><displayx>-195</displayx><displayy>-105</displayy><displaywidth>150</displaywidth><displayheight>90</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="b1b42259-5cdc-4052-b3d0-b9a3d3cb860e" name="Start" type="Start"><subsheetid>4c4173cc-23f2-42e4-8458-cc5ce3507420</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>-105</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><onsuccess>f1d9b412-3da8-4f61-bdd2-42fe55b25a9d</onsuccess></stage><stage stageid="f1d9b412-3da8-4f61-bdd2-42fe55b25a9d" name="End" type="End"><subsheetid>4c4173cc-23f2-42e4-8458-cc5ce3507420</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>90</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="4e577d32-d65b-4a2a-862e-3f0770446935" name="Minimise Blueprism" type="SubSheetInfo"><subsheetid>d00dfc4d-cb0e-4d61-af6e-5e13ff3d7ea0</subsheetid><narrative></narrative><displayx>-195</displayx><displayy>-105</displayy><displaywidth>150</displaywidth><displayheight>90</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="3a2396bc-33bf-42f1-ad01-f857faa05686" name="Start" type="Start"><subsheetid>d00dfc4d-cb0e-4d61-af6e-5e13ff3d7ea0</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>-105</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><inputs><input type="text" name="WindowTitle" narrative="WindowTitle" stage="WindowTitle" /></inputs><onsuccess>feb53699-9127-46e1-8c0d-90d441827988</onsuccess></stage><stage stageid="2ff01e1b-5210-4101-971b-e3f4d287eab2" name="End" type="End"><subsheetid>d00dfc4d-cb0e-4d61-af6e-5e13ff3d7ea0</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>90</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="6b125327-d532-463a-8c2f-c54809ab7a19" name="Note1" type="Note"><subsheetid>4c4173cc-23f2-42e4-8458-cc5ce3507420</subsheetid><narrative>Clean Up Page
+
+This is an optional page where you might choose to perform some finalisation (or "cleanup") tasks as your business object is closed down.
+
+The cleanup action will be called automatically immediately after closing your business object at the end of a business process.
+
+You will not be able to call this action from a business process, nor will it be called at any other time than before the disposal of the business object.</narrative><displayx>-180</displayx><displayy>60</displayy><displaywidth>180</displaywidth><displayheight>230</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="677609ce-4e89-45ad-857e-444b7d4e532a" name="Note2" type="Note"><narrative>Initialise Page
+
+This is an optional page where you might choose to perform some initialisation tasks after your business object is loaded.
+
+The initialise action will be called automatically immediately after loading your business object.
+
+You will not be able to call this action from a business process, nor will it be called at any other time than after the creation of the object.</narrative><displayx>-180</displayx><displayy>60</displayy><displaywidth>180</displaywidth><displayheight>230</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="feb53699-9127-46e1-8c0d-90d441827988" name="Minimise BP" type="Code"><subsheetid>d00dfc4d-cb0e-4d61-af6e-5e13ff3d7ea0</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>-15</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><inputs><input type="text" name="WindowTitle" expr="[WindowTitle]" /></inputs><onsuccess>2ff01e1b-5210-4101-971b-e3f4d287eab2</onsuccess><code><![CDATA[ChangeWindowState(WindowTitle,false);]]></code></stage><stage stageid="e43c60b2-f49a-40af-be1c-e408a6187aeb" name="WindowTitle" type="Data"><subsheetid>d00dfc4d-cb0e-4d61-af6e-5e13ff3d7ea0</subsheetid><narrative></narrative><displayx>-195</displayx><displayy>0</displayy><displaywidth>180</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><datatype>text</datatype><initialvalue xml:space="preserve">Blue Prism - The Virtual Workforce</initialvalue><private /><alwaysinit /></stage><stage stageid="ed106136-b278-4bc0-93db-c1990e3ec686" name="Maximise Window" type="SubSheetInfo"><subsheetid>060b1b8d-083e-4f5b-851b-e850e62c37a5</subsheetid><narrative></narrative><displayx>-225</displayx><displayy>-105</displayy><displaywidth>150</displaywidth><displayheight>90</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="b3d0df50-ebc6-4b29-8085-e068b8acb1fe" name="Start" type="Start"><subsheetid>060b1b8d-083e-4f5b-851b-e850e62c37a5</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>-105</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><inputs><input type="text" name="WindowTitle" narrative="WindowTitle" stage="WindowTitle" /></inputs><onsuccess>eae355c1-90b0-4904-9cfb-7ed289a87f16</onsuccess></stage><stage stageid="354bddab-daa1-4338-9737-fedb633e1e74" name="End" type="End"><subsheetid>060b1b8d-083e-4f5b-851b-e850e62c37a5</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>90</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="eae355c1-90b0-4904-9cfb-7ed289a87f16" name="Maximise Window" type="Code"><subsheetid>060b1b8d-083e-4f5b-851b-e850e62c37a5</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>-15</displayy><displaywidth>90</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><inputs><input type="text" name="WindowTitle" expr="[WindowTitle]" /></inputs><onsuccess>354bddab-daa1-4338-9737-fedb633e1e74</onsuccess><code><![CDATA[ChangeWindowState(WindowTitle,true);]]></code></stage><stage stageid="d2d5fb09-1f22-4104-8c28-d311b6a12613" name="WindowTitle" type="Data"><subsheetid>060b1b8d-083e-4f5b-851b-e850e62c37a5</subsheetid><narrative></narrative><displayx>-195</displayx><displayy>0</displayy><displaywidth>180</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><datatype>text</datatype><initialvalue xml:space="preserve">Book1 - Excel</initialvalue><private /><alwaysinit /></stage><stage stageid="f0193c1e-1882-4ad1-8fb8-e5bd3433d387" name="Activate Window" type="SubSheetInfo"><subsheetid>c3709fc0-0a96-4707-b88a-7bc75de589b3</subsheetid><narrative></narrative><displayx>-225</displayx><displayy>-105</displayy><displaywidth>150</displaywidth><displayheight>90</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="c2173e76-2666-44ca-b055-78ba2f6d67f6" name="Start" type="Start"><subsheetid>c3709fc0-0a96-4707-b88a-7bc75de589b3</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>-105</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><inputs><input type="text" name="WindowTitle" narrative="WindowTitle" stage="WindowTitle" /></inputs><onsuccess>ad6a7df0-c76d-4a55-b6bb-a1a8a1ac69d5</onsuccess></stage><stage stageid="f73546ea-9637-41cc-af45-e62ee8862c67" name="End" type="End"><subsheetid>c3709fc0-0a96-4707-b88a-7bc75de589b3</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>90</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="ad6a7df0-c76d-4a55-b6bb-a1a8a1ac69d5" name="Activate Window" type="Code"><subsheetid>c3709fc0-0a96-4707-b88a-7bc75de589b3</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>-15</displayy><displaywidth>90</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><inputs><input type="text" name="WindowTitle" expr="[WindowTitle]" /></inputs><onsuccess>f73546ea-9637-41cc-af45-e62ee8862c67</onsuccess><code><![CDATA[ActivateWindow(WindowTitle);]]></code></stage><stage stageid="0a07a124-e1d1-498e-b940-a3867824c227" name="WindowTitle" type="Data"><subsheetid>c3709fc0-0a96-4707-b88a-7bc75de589b3</subsheetid><narrative></narrative><displayx>-195</displayx><displayy>0</displayy><displaywidth>180</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><datatype>text</datatype><initialvalue xml:space="preserve">RunDetails - Excel</initialvalue><private /><alwaysinit /></stage><stage stageid="d021462a-1ee2-4c2a-8372-5619d3575d54" name="Minimise Window" type="SubSheetInfo"><subsheetid>c01b09f7-3439-4cd2-bf1a-c65b3234abd5</subsheetid><narrative></narrative><displayx>-225</displayx><displayy>-105</displayy><displaywidth>150</displaywidth><displayheight>90</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="0b9f6a10-89e4-40c1-bdfa-d152827e5de9" name="Start" type="Start"><subsheetid>c01b09f7-3439-4cd2-bf1a-c65b3234abd5</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>-105</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><inputs><input type="text" name="WindowTitle" narrative="WindowTitle" stage="WindowTitle" /></inputs><onsuccess>4cf96265-53ff-4579-b1c1-8b1cc4830c39</onsuccess></stage><stage stageid="bc9b951b-25c5-4cbf-901d-cbd5d2188d5c" name="End" type="End"><subsheetid>c01b09f7-3439-4cd2-bf1a-c65b3234abd5</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>90</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="4cf96265-53ff-4579-b1c1-8b1cc4830c39" name="Minimise Window" type="Code"><subsheetid>c01b09f7-3439-4cd2-bf1a-c65b3234abd5</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>-15</displayy><displaywidth>90</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><inputs><input type="text" name="WindowTitle" expr="[WindowTitle]" /></inputs><onsuccess>bc9b951b-25c5-4cbf-901d-cbd5d2188d5c</onsuccess><code><![CDATA[ChangeWindowState(WindowTitle,false);]]></code></stage><stage stageid="7139e218-9a94-431d-bc98-223676be5d6b" name="WindowTitle" type="Data"><subsheetid>c01b09f7-3439-4cd2-bf1a-c65b3234abd5</subsheetid><narrative></narrative><displayx>-195</displayx><displayy>0</displayy><displaywidth>180</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><datatype>text</datatype><initialvalue xml:space="preserve">RunDetails.xlsx</initialvalue><private /><alwaysinit /></stage><stage stageid="2e9729e6-6d77-494d-a24a-e7c689fed82f" name="KillExcelUsingReportName" type="SubSheetInfo"><subsheetid>77a48916-82e2-4124-98af-22f28b24c100</subsheetid><narrative></narrative><displayx>-195</displayx><displayy>-105</displayy><displaywidth>150</displaywidth><displayheight>90</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="95a40ab5-1c19-45df-af08-59d434d560a0" name="Start" type="Start"><subsheetid>77a48916-82e2-4124-98af-22f28b24c100</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>-60</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><onsuccess>0106ad4d-d852-4ced-ba19-c3aed4a3ad47</onsuccess></stage><stage stageid="49c94b05-7523-4907-a093-53c8e14a20b7" name="End" type="End"><subsheetid>77a48916-82e2-4124-98af-22f28b24c100</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>90</displayy><displaywidth>60</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /></stage><stage stageid="0106ad4d-d852-4ced-ba19-c3aed4a3ad47" name="Kill Excel WorkBook Using Name" type="Code"><subsheetid>77a48916-82e2-4124-98af-22f28b24c100</subsheetid><loginhibit /><narrative></narrative><displayx>15</displayx><displayy>0</displayy><displaywidth>120</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><inputs><input type="text" name="WorkBookName" expr="[WorkBookName]" /></inputs><onsuccess>49c94b05-7523-4907-a093-53c8e14a20b7</onsuccess><code><![CDATA[KillExcelUsingName(WorkBookName);]]></code></stage><stage stageid="7986ea79-5fb8-43b8-9946-c2b8e5eb7111" name="WorkBookName" type="Data"><subsheetid>77a48916-82e2-4124-98af-22f28b24c100</subsheetid><narrative></narrative><displayx>-210</displayx><displayy>15</displayy><displaywidth>120</displaywidth><displayheight>30</displayheight><font family="Segoe UI" size="10" style="Regular" color="000000" /><datatype>text</datatype><initialvalue xml:space="preserve">Book1.xlsx</initialvalue><private /><alwaysinit /></stage><stage stageid="cf837c70-df52-4297-a89c-7a3640496cf8" name="Input Variables" type="Block"><subsheetid>d00dfc4d-cb0e-4d61-af6e-5e13ff3d7ea0</subsheetid><loginhibit /><narrative></narrative><displayx>-300</displayx><displayy>-45</displayy><displaywidth>210</displaywidth><displayheight>90</displayheight><font family="Segoe UI" size="10" style="Regular" color="FFCC00" /></stage><stage stageid="1791f8c0-0abe-4f73-a079-a5de3eb6d332" name="Input Variables" type="Block"><subsheetid>060b1b8d-083e-4f5b-851b-e850e62c37a5</subsheetid><loginhibit /><narrative></narrative><displayx>-300</displayx><displayy>-45</displayy><displaywidth>210</displaywidth><displayheight>90</displayheight><font family="Segoe UI" size="10" style="Regular" color="FFCC00" /></stage><stage stageid="2f3d59a3-feff-4e41-ab83-52a484e69a08" name="Input Variables" type="Block"><subsheetid>c3709fc0-0a96-4707-b88a-7bc75de589b3</subsheetid><loginhibit /><narrative></narrative><displayx>-300</displayx><displayy>-45</displayy><displaywidth>210</displaywidth><displayheight>90</displayheight><font family="Segoe UI" size="10" style="Regular" color="FFCC00" /></stage><stage stageid="78314e52-2f63-4508-9d80-390ea6b17c26" name="Input Variables" type="Block"><subsheetid>c01b09f7-3439-4cd2-bf1a-c65b3234abd5</subsheetid><loginhibit /><narrative></narrative><displayx>-300</displayx><displayy>-45</displayy><displaywidth>210</displaywidth><displayheight>90</displayheight><font family="Segoe UI" size="10" style="Regular" color="FFCC00" /></stage><stage stageid="29be187a-21e9-497b-91d8-ffffaa7d4f92" name="Input Variables" type="Block"><subsheetid>77a48916-82e2-4124-98af-22f28b24c100</subsheetid><loginhibit /><narrative></narrative><displayx>-300</displayx><displayy>-30</displayy><displaywidth>210</displaywidth><displayheight>90</displayheight><font family="Segoe UI" size="10" style="Regular" color="FFCC00" /></stage></process></object>
+        <object-group id="8ecc9a40-6d38-4548-af7a-2e5d6fef6d39" name="Assets" xmlns="http://www.blueprism.co.uk/product/object-group">
+            <members>
+                <object id="9f35419b-d106-47ba-aeaf-6f827334f701" />
+                <object id="3772c20e-943f-426c-bb24-e3516d95bf2a" />
+            </members>
+        </object-group>
+    </bpr:contents>
+</bpr:release>
